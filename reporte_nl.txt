@@ -1,0 +1,1294 @@
+🔍 Analizando /home/houdini/nl-to-sql-app
+
+📄 .pytest_cache/README.md
+    Tipo:    📝 Markdown
+
+📄 data/data.csv
+    Tipo:    📊 CSV
+
+📄 data/data_50.csv
+    Tipo:    📊 CSV
+
+📄 data/data_full.csv
+    Tipo:    📊 CSV
+
+📄 postman/nl-to-sql-app.postman_collection.json
+    Tipo:    🧾 JSON
+
+📄 data/data_10.csv
+    Tipo:    📊 CSV
+
+📄 app/models.py
+    Tipo:    🐍 Python
+    Imports:
+      ✅ pydantic.BaseModel
+      ✅ pydantic.ConfigDict
+      ✅ pydantic.Field
+    Símbolos:
+      🏛️ clase HealthResponse
+          🟢 O(1) constante: no depende de cuántos datos haya.
+      🏛️ clase AskRequest
+          🟢 O(1) constante: no depende de cuántos datos haya.
+      🏛️ clase AskResponse
+          🟢 O(1) constante: no depende de cuántos datos haya.
+    Componentes:
+      🔌 SDK + API (0):
+        (ninguno)
+      🧠 Lógica (19):
+           1  """
+           2  app/models.py
+           4  Modelos Pydantic que definen la forma de los datos que entran y salen
+           5  por la API. En esta fase solo existe el modelo de respuesta de /health;
+           6  los modelos de pregunta/respuesta en lenguaje natural se agregan en la
+           7  fase donde se construye ese endpoint.
+           8  """
+          13  class HealthResponse(BaseModel):
+          14      status: str
+          15      database_connected: bool
+          17  class AskRequest(BaseModel):
+          21      model_config = ConfigDict(str_strip_whitespace=True)
+          23      question: str = Field(min_length=1)
+          26  class AskResponse(BaseModel):
+          27      question: str
+          28      sql: str
+          29      columns: list[str]
+          30      rows: list[list]
+          31      attempts: int
+      🖨️ Prints y logs (0):
+        (ninguno)
+
+📄 README.md
+    Tipo:    📝 Markdown
+
+📄 tests/test_sql_validation.py
+    Tipo:    🐍 Python
+    Imports:
+      ✅ pytest
+      ✅ app.db.TABLE_NAME
+      ✅ app.text_to_sql.SQLValidationError
+      ✅ app.text_to_sql.validate_sql
+    Símbolos:
+      🔧 función test_valid_select_passes
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          0 parámetros
+          devuelve: sin tipo
+      🔧 función test_rejects_forbidden_keywords
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: forbidden_sql: sin tipo
+          devuelve: sin tipo
+      🔧 función test_rejects_multiple_statements
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          0 parámetros
+          devuelve: sin tipo
+      🔧 función test_rejects_unknown_table
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          0 parámetros
+          devuelve: sin tipo
+      🔧 función test_adds_limit_when_missing
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          0 parámetros
+          devuelve: sin tipo
+    Componentes:
+      🔌 SDK + API (0):
+        (ninguno)
+      🧠 Lógica (36):
+           1  """
+           2  tests/test_sql_validation.py
+           4  Unit tests for the SQL validator (app/text_to_sql.py). This is the
+           5  independent security layer that never trusts the model's output — see
+           6  section 5.1 of the build doc for the full threat model. These tests run
+           7  against the validator directly, with no model and no database involved.
+           8  """
+          15  VALID_SQL = f"SELECT title, price FROM {TABLE_NAME} LIMIT 10"
+          18  def test_valid_select_passes():
+          19      result = validate_sql(VALID_SQL)
+          20      assert result.upper().startswith("SELECT")
+          23  @pytest.mark.parametrize(
+          24      "forbidden_sql",
+          25      [
+          26          f"DROP TABLE {TABLE_NAME}",
+          27          f"DELETE FROM {TABLE_NAME}",
+          28          f"UPDATE {TABLE_NAME} SET price = 0",
+          29          f"INSERT INTO {TABLE_NAME} (title) VALUES ('x')",
+          30          f"ATTACH DATABASE 'evil.db' AS evil",
+          31          "PRAGMA table_info(products)",
+          32      ],
+          33  )
+          34  def test_rejects_forbidden_keywords(forbidden_sql):
+          35      with pytest.raises(SQLValidationError):
+          36          validate_sql(forbidden_sql)
+          39  def test_rejects_multiple_statements():
+          40      malicious_sql = f"SELECT * FROM {TABLE_NAME}; DROP TABLE {TABLE_NAME};"
+          41      with pytest.raises(SQLValidationError):
+          42          validate_sql(malicious_sql)
+          45  def test_rejects_unknown_table():
+          46      with pytest.raises(SQLValidationError):
+          47          validate_sql("SELECT * FROM some_other_table")
+          50  def test_adds_limit_when_missing():
+          51      sql_without_limit = f"SELECT title FROM {TABLE_NAME}"
+          52      result = validate_sql(sql_without_limit)
+          53      assert "LIMIT" in result.upper()
+      🖨️ Prints y logs (0):
+        (ninguno)
+
+📄 tests/test_csv_loading.py
+    Tipo:    🐍 Python
+    Imports:
+      ✅ pandas → pd
+      ✅ pytest
+      ✅ app.db.SCHEMA
+      ✅ app.db.CSVLoadError
+      ✅ app.db.load_csv_to_db
+    Símbolos:
+      🔧 función _valid_row
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          0 parámetros
+          devuelve: sin tipo
+      🔧 función test_loads_valid_csv
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: tmp_path: sin tipo
+          devuelve: sin tipo
+      🔧 función test_raises_on_missing_file
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: tmp_path: sin tipo
+          devuelve: sin tipo
+      🔧 función test_raises_on_empty_file
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: tmp_path: sin tipo
+          devuelve: sin tipo
+      🔧 función test_raises_on_header_only_csv
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: tmp_path: sin tipo
+          devuelve: sin tipo
+      🔧 función test_raises_on_missing_column
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: tmp_path: sin tipo
+          devuelve: sin tipo
+    Componentes:
+      🔌 SDK + API (0):
+        (ninguno)
+      🧠 Lógica (56):
+           1  """
+           2  tests/test_csv_loading.py
+           4  Unit tests for the CSV loader (app/db.py). Covers the "empty file or
+           5  missing columns" item from the Phase 6 checklist: load_csv_to_db() should
+           6  raise a clean CSVLoadError in these cases, never crash with an unhandled
+           7  exception. Uses pytest's tmp_path fixture to write throwaway CSV/DB files
+           8  per test, so nothing touches the real data/ folder.
+           9  """
+          17  def _valid_row():
+          18      """One row with every column SCHEMA expects, keyed by source CSV name."""
+          19      values_by_final_name = {
+          20          "item_id": "P1",
+          21          "title": "Test Product",
+          22          "price": 100.0,
+          23          "previous_price": 120.0,
+          24          "discount_pct": "10% OFF",
+          25          "free_shipping": True,
+          26          "official_store": False,
+          27          "in_stock": True,
+          28          "seller_name": "Test Seller",
+          29          "units_sold": 5,
+          30          "rating": 4.5,
+          31          "reviews_count": 10,
+          32          "installments_text": "3x $33.33",
+          33          "shipping_text": "Free shipping",
+          34          "product_link": "http://example.com/p1",
+          35          "image_url": "http://example.com/p1.jpg",
+          36      }
+          37      return {info["source"]: values_by_final_name[final_name] for final_name, info in SCHEMA.items()}
+          40  def test_loads_valid_csv(tmp_path):
+          41      csv_path = tmp_path / "valid.csv"
+          42      pd.DataFrame([_valid_row()]).to_csv(csv_path, index=False)
+          44      rows_loaded = load_csv_to_db(csv_path=str(csv_path), db_path=str(tmp_path / "test.db"))
+          46      assert rows_loaded == 1
+          49  def test_raises_on_missing_file(tmp_path):
+          50      missing_path = tmp_path / "does_not_exist.csv"
+          52      with pytest.raises(CSVLoadError):
+          53          load_csv_to_db(csv_path=str(missing_path), db_path=str(tmp_path / "test.db"))
+          56  def test_raises_on_empty_file(tmp_path):
+          57      csv_path = tmp_path / "empty.csv"
+          58      csv_path.write_text("")  # 0 bytes, no header at all
+          60      with pytest.raises(CSVLoadError):
+          61          load_csv_to_db(csv_path=str(csv_path), db_path=str(tmp_path / "test.db"))
+          64  def test_raises_on_header_only_csv(tmp_path):
+          65      csv_path = tmp_path / "header_only.csv"
+          66      header = ",".join(info["source"] for info in SCHEMA.values())
+          67      csv_path.write_text(header + "\n")  # valid header, zero data rows
+          69      with pytest.raises(CSVLoadError):
+          70          load_csv_to_db(csv_path=str(csv_path), db_path=str(tmp_path / "test.db"))
+          73  def test_raises_on_missing_column(tmp_path):
+          74      csv_path = tmp_path / "missing_column.csv"
+          75      row = _valid_row()
+          76      del row["articuloTitulo"]  # drop one column the schema expects
+          77      pd.DataFrame([row]).to_csv(csv_path, index=False)
+          79      with pytest.raises(CSVLoadError):
+          80          load_csv_to_db(csv_path=str(csv_path), db_path=str(tmp_path / "test.db"))
+      🖨️ Prints y logs (0):
+        (ninguno)
+
+📄 app/db.py
+    Tipo:    🐍 Python
+    Imports:
+      ✅ os
+      ✅ re
+      ✅ sqlite3
+      ✅ logging
+      ✅ pandas → pd
+      ✅ pathlib.Path
+      ✅ dotenv.load_dotenv
+    Símbolos:
+      🏛️ clase CSVLoadError
+          🟢 O(1) constante: no depende de cuántos datos haya.
+      🔧 función _parse_discount_pct
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: value: sin tipo
+          devuelve: sin tipo
+      🔧 función _to_nullable_bool
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: value: sin tipo
+          devuelve: sin tipo
+      🔧 función load_csv_to_db
+          🟢 O(n) lineal: con 10 veces más datos, tarda unas 10 veces más.
+          2 parámetros: csv_path: str, db_path: str
+          devuelve: int
+      🔧 función get_connection
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: db_path: str
+          devuelve: sqlite3.Connection
+      🔧 función execute_query
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          2 parámetros: sql: str, db_path: str
+          devuelve: dict
+      🔧 función health_check
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: db_path: str
+          devuelve: bool
+    Componentes:
+      🔌 SDK + API (0):
+        (ninguno)
+      🧠 Lógica (118):
+           1  """
+           2  app/db.py
+           4  Data access layer: SQLite connection, CSV-to-SQLite loading, and raw SQL
+           5  execution. This module knows nothing about HTTP or FastAPI — that lives
+           6  in main.py. Separation of concerns, per section 4 of the build doc.
+           7  """
+          18  load_dotenv()
+          22  DATABASE_PATH = os.getenv("DATABASE_PATH", "./data/data.db")
+          23  CSV_PATH = os.getenv("CSV_PATH", "./data/data.csv")
+          25  TABLE_NAME = "products"
+          32  SCHEMA = {
+          33      "item_id":          {"source": "idPublicacion",     "sql_type": "TEXT PRIMARY KEY"},
+          34      "title":            {"source": "articuloTitulo",     "sql_type": "TEXT NOT NULL"},
+          35      "price":            {"source": "nuevoPrecio",        "sql_type": "REAL"},
+          36      "previous_price":   {"source": "precioAnterior",     "sql_type": "REAL"},
+          37      "discount_pct":     {"source": "precioDiscount",     "sql_type": "REAL"},
+          38      "free_shipping":    {"source": "envioGratis",        "sql_type": "INTEGER"},
+          39      "official_store":   {"source": "esTiendaOficial",    "sql_type": "INTEGER"},
+          40      "in_stock":         {"source": "enStock",            "sql_type": "INTEGER"},
+          41      "seller_name":      {"source": "Vendedor",           "sql_type": "TEXT"},
+          42      "units_sold":       {"source": "cantidadVendida",    "sql_type": "REAL"},
+          43      "rating":           {"source": "produtoReviews",     "sql_type": "REAL"},
+          44      "reviews_count":    {"source": "numeroEvaluaciones", "sql_type": "REAL"},
+          45      "installments_text":{"source": "installments",       "sql_type": "TEXT"},
+          46      "shipping_text":    {"source": "Envio",              "sql_type": "TEXT"},
+          47      "product_link":     {"source": "zProductoLink",      "sql_type": "TEXT"},
+          48      "image_url":        {"source": "imgDireccion",       "sql_type": "TEXT"},
+          49  }
+          52  class CSVLoadError(Exception):
+          53      """Raised when the source CSV can't be loaded or mapped to SCHEMA."""
+          56  def _parse_discount_pct(value):
+          57      """Turn a string like '10% OFF' into the float 10.0. None if missing/unparseable."""
+          58      if pd.isna(value):
+          59          return None
+          60      match = re.search(r"(\d+(?:\.\d+)?)", str(value))
+          61      return float(match.group(1)) if match else None
+          64  def _to_nullable_bool(value):
+          65      """Turn pandas True/False/NaN into 1/0/None for SQLite storage."""
+          66      if pd.isna(value):
+          67          return None
+          68      return 1 if bool(value) else 0
+          71  def load_csv_to_db(csv_path: str = CSV_PATH, db_path: str = DATABASE_PATH) -> int:
+          72      """
+          73      Read the source CSV, map/clean its columns according to SCHEMA, and
+          74      load it into a fresh SQLite table. Meant to run once at startup, not
+          75      on every query.
+          77      Returns the number of rows loaded.
+          78      Raises CSVLoadError if the file is missing, empty, malformed, or
+          79      missing a column that SCHEMA expects.
+          80      """
+          81      path = Path(csv_path)
+          82      if not path.exists():
+          83          raise CSVLoadError(f"CSV file not found at '{csv_path}'")
+          85      try:
+          86          df = pd.read_csv(path)
+          87      except pd.errors.EmptyDataError:
+          88          raise CSVLoadError(f"CSV file at '{csv_path}' is empty")
+          89      except pd.errors.ParserError as exc:
+          90          raise CSVLoadError(f"CSV file at '{csv_path}' is malformed: {exc}")
+          92      if df.empty:
+          93          raise CSVLoadError(f"CSV file at '{csv_path}' has no rows")
+          95      missing = [info["source"] for info in SCHEMA.values() if info["source"] not in df.columns]
+          96      if missing:
+          97          raise CSVLoadError(f"CSV is missing expected columns: {missing}")
+          99      clean = pd.DataFrame()
+         100      for final_name, info in SCHEMA.items():
+         101          source_col = info["source"]
+         102          if final_name == "discount_pct":
+         103              clean[final_name] = df[source_col].apply(_parse_discount_pct)
+         104          elif final_name in ("free_shipping", "official_store", "in_stock"):
+         105              clean[final_name] = df[source_col].apply(_to_nullable_bool)
+         106          else:
+         107              clean[final_name] = df[source_col]
+         109      if clean["item_id"].duplicated().any():
+         111          clean = clean.drop_duplicates(subset="item_id", keep="first")
+         113      Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+         114      conn = sqlite3.connect(db_path)
+         115      try:
+         116          columns_sql = ", ".join(f"{name} {info['sql_type']}" for name, info in SCHEMA.items())
+         117          conn.execute(f"DROP TABLE IF EXISTS {TABLE_NAME}")
+         118          conn.execute(f"CREATE TABLE {TABLE_NAME} ({columns_sql})")
+         119          clean.to_sql(TABLE_NAME, conn, if_exists="append", index=False)
+         120          conn.commit()
+         121      finally:
+         122          conn.close()
+         125      return len(clean)
+         128  def get_connection(db_path: str = DATABASE_PATH) -> sqlite3.Connection:
+         129      """
+         130      Open a read-only connection to the SQLite database. Read-only because
+         131      query execution (this service, and the text-to-SQL service in Phase 2)
+         132      should never be able to modify the data — see section 5.1 of the
+         133      build doc for the full rationale.
+         134      """
+         135      uri = f"file:{db_path}?mode=ro"
+         136      return sqlite3.connect(uri, uri=True)
+         139  def execute_query(sql: str, db_path: str = DATABASE_PATH) -> dict:
+         140      """
+         141      Execute a raw SQL string and return {"columns": [...], "rows": [...]}.
+         143      NOTE: this does NOT validate or sanitize the SQL yet — that's
+         144      explicitly deferred to Phase 2 (see section 5.1: SQL injection
+         145      prevention). In this phase it's called directly from tests/dev
+         146      scripts, not exposed as its own HTTP route.
+         147      """
+         148      conn = get_connection(db_path)
+         149      try:
+         150          cursor = conn.execute(sql)
+         151          columns = [d[0] for d in cursor.description] if cursor.description else []
+         152          rows = cursor.fetchall()
+         153      finally:
+         154          conn.close()
+         155      return {"columns": columns, "rows": rows}
+         158  def health_check(db_path: str = DATABASE_PATH) -> bool:
+         159      """Used by GET /health: can we open the DB and run a trivial query?"""
+         160      try:
+         161          result = execute_query("SELECT 1", db_path=db_path)
+         162          return result["rows"] == [(1,)]
+         163      except Exception:
+         164          return False
+      🖨️ Prints y logs (3):
+          20  logger = logging.getLogger(__name__)
+         110          logger.warning("Duplicate item_id values found in CSV; keeping first occurrence")
+         124      logger.info("Loaded %d rows into '%s' from '%s'", len(clean), TABLE_NAME, csv_path)
+
+📄 docs/make_diagram.py
+    Tipo:    🐍 Python
+    Imports:
+      ✅ os
+      ✅ matplotlib
+      ✅ matplotlib.pyplot → plt
+      ✅ matplotlib.patches → mpatches
+      ✅ matplotlib.patches.FancyBboxPatch
+      ✅ matplotlib.patches.FancyArrowPatch
+      ✅ matplotlib.patches.Polygon
+    Símbolos:
+      🔧 función box
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          7 parámetros: x: sin tipo, y: sin tipo, w: sin tipo, h: sin tipo, text: sin tipo, fill: sin tipo, fs: sin tipo
+          devuelve: sin tipo
+      🔧 función diamond
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          6 parámetros: x: sin tipo, y: sin tipo, w: sin tipo, h: sin tipo, text: sin tipo, fs: sin tipo
+          devuelve: sin tipo
+      🔧 función arrow
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          6 parámetros: x1: sin tipo, y1: sin tipo, x2: sin tipo, y2: sin tipo, rad: sin tipo, dashed: sin tipo
+          devuelve: sin tipo
+      🔧 función title
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          3 parámetros: x: sin tipo, y: sin tipo, text: sin tipo
+          devuelve: sin tipo
+    Componentes:
+      🔌 SDK + API (0):
+        (ninguno)
+      🧠 Lógica (83):
+           1  """Flow diagram PNG: clean, full detail, aligned with the current code."""
+           4  matplotlib.use("Agg")
+           9  OUT = "docs/request-flow.png"
+          11  fig, ax = plt.subplots(figsize=(18, 13))
+          12  ax.set_xlim(0, 125)
+          13  ax.set_ylim(0, 90)
+          14  ax.axis("off")
+          15  fig.patch.set_facecolor("white")
+          16  ax.set_facecolor("white")
+          18  INK = "#1f2937"
+          19  BLUE = "#1e40af"
+          20  LBLUE = "#e0e7ff"
+          21  LGREEN = "#dcfce7"
+          22  RED = "#991b1b"
+          23  LRED = "#fee2e2"
+          24  GRAY = "#f3f4f6"
+          25  AMBER = "#fef3c7"
+          28  def box(x, y, w, h, text, fill="white", fs=10):
+          29      ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.02,rounding_size=1.2",
+          30                                  linewidth=1.8, edgecolor=INK, facecolor=fill))
+          31      ax.text(x + w/2, y + h/2, text, ha="center", va="center",
+          32              color=INK, fontsize=fs, weight="bold")
+          35  def diamond(x, y, w, h, text, fs=9.5):
+          36      ax.add_patch(Polygon([(x+w/2, y+h), (x+w, y+h/2), (x+w/2, y), (x, y+h/2)],
+          37                           closed=True, facecolor=AMBER, edgecolor=INK, linewidth=1.8))
+          38      ax.text(x + w/2, y + h/2, text, ha="center", va="center",
+          39              color=INK, fontsize=fs, weight="bold")
+          42  def arrow(x1, y1, x2, y2, rad=0.0, dashed=False):
+          43      ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>",
+          44                                   mutation_scale=16, color=INK, lw=1.8,
+          45                                   linestyle=(0, (4, 3)) if dashed else "solid",
+          46                                   connectionstyle=f"arc3,rad={rad}"))
+          49  def title(x, y, text):
+          50      ax.text(x, y, text, ha="center", fontsize=12.5, weight="bold", color=BLUE)
+          54  ax.text(62, 86, "NL-to-SQL App — Request Flow", ha="center", fontsize=20, weight="bold", color=INK)
+          55  ax.text(62, 83, "From a natural-language question to a validated SQL result, 100% local",
+          56          ha="center", fontsize=11, color="#6b7280")
+          59  title(25, 78, "1 · STARTUP (lifespan)")
+          60  box(10, 70, 30, 6, "docker compose up\napp + ollama · custom dns", fill=LBLUE, fs=9.5)
+          61  box(10, 62, 30, 6, "Load CSV → SQLite\n(db.load_csv_to_db)", fill=GRAY, fs=9.5)
+          62  box(10, 54, 30, 6, "Model warm-up\n60 retries × 5s backoff", fill=GRAY, fs=9.5)
+          63  box(10, 46, 30, 6, "Ollama unreachable?\n→ /ask returns 503", fill=LRED, fs=9.5)
+          64  arrow(25, 70, 25, 68)
+          65  arrow(25, 62, 25, 60)
+          66  arrow(25, 54, 25, 52)
+          69  title(70, 78, "2 · MAIN FLOW (POST /ask)")
+          70  box(52, 70, 36, 6, "User question\n(static JS frontend)", fill=LGREEN)
+          71  box(52, 62, 36, 6, "POST /ask {question}\nglobal timeout 120s (504 on timeout)", fill=GRAY, fs=9.5)
+          72  box(52, 54, 36, 6, "build_prompt()\nschema + few-shot + instructions", fill=GRAY, fs=9.5)
+          73  box(52, 46, 36, 6, "Ollama /api/generate\n\"temperature\": 0", fill=LBLUE, fs=9.5)
+          74  box(52, 38, 36, 6, "_extract_sql()\nstrip markdown/extra text", fill=GRAY, fs=9.5)
+          75  box(52, 30, 36, 6, "validate_sql()\nSELECT-only · 1 statement · LIMIT ≤ 100", fill=AMBER, fs=9.5)
+          76  box(52, 22, 36, 6, "execute_query()\nSQLite read-only connection", fill=GRAY, fs=9.5)
+          77  diamond(58, 13, 24, 7, "Success?")
+          78  box(52, 4, 36, 7, "JSON {question, sql, columns,\nrows, attempts} → UI", fill=LGREEN, fs=9.5)
+          80  ysteps = [70, 62, 54, 46, 38, 30, 22]
+          81  for a, b in zip(ysteps, ysteps[1:]):
+          82      arrow(70, a, 70, b + 6)
+          83  arrow(70, 22, 70, 20)
+          84  arrow(70, 13, 70, 11)
+          87  mpatches.FancyBboxPatch  # noqa
+          88  sec = mpatches.FancyBboxPatch((50.5, 20.5), 39, 17,
+          89          boxstyle="square,pad=0.02", linewidth=1.6, edgecolor=RED,
+          90          facecolor="none", linestyle=(0, (4, 3)))
+          91  ax.add_patch(sec)
+          92  ax.text(49, 29, "SECURITY\nBOUNDARY", ha="right", fontsize=8.5, color=RED, weight="bold")
+          95  box(93, 24, 24, 8, "Retry ≤ 3:\nreal error\nfed back to\nthe model", fill=LRED, fs=9)
+          96  arrow(82, 16.5, 93, 28)
+          97  arrow(105, 32, 105, 49)
+          98  arrow(105, 49, 88, 49)
+         100  ax.text(70, 0.5, "3 failed attempts → 422 · Ollama unreachable → 503 · global timeout → 504",
+         101          ha="center", fontsize=9.5, color="#6b7280")
+         104  title(106, 78, "3 · AUX")
+         105  box(95, 70, 25, 6, "GET /health\n{status, database_connected}", fill=GRAY, fs=9)
+         106  box(95, 62, 25, 6, "POST /internal/query\nraw SQL (dev only)", fill=GRAY, fs=9)
+         107  box(95, 54, 25, 6, "SQLite: products\n16 cols from CSV", fill=LBLUE, fs=9)
+         110  ax.plot([5, 120], [-2, -2], color="#e5e7eb", lw=1.2)
+         111  ax.text(62, -5.5, "Camila Chirino Castell · github.com/camilachirinocastell · linkedin.com/in/camila-chirino-castell · camilachirinocastell-portfolio.netlify.app",
+         112          ha="center", fontsize=9, color="#6b7280")
+         114  ax.set_ylim(-9, 90)
+         115  os.makedirs("docs", exist_ok=True)
+         116  plt.tight_layout()
+         117  plt.savefig(OUT, dpi=150, bbox_inches="tight", facecolor="white")
+      🖨️ Prints y logs (1):
+         118  print("saved", OUT)
+
+📄 app/main.py
+    Tipo:    🐍 Python
+    Imports:
+      ✅ asyncio
+      ✅ logging
+      ✅ os
+      ✅ contextlib.asynccontextmanager
+      ✅ fastapi.FastAPI
+      ✅ fastapi.HTTPException
+      ✅ pydantic.BaseModel
+      ✅ app.db.CSVLoadError
+      ✅ app.db.execute_query
+      ✅ app.db.health_check
+      ✅ app.db.load_csv_to_db
+      ✅ app.text_to_sql.OllamaError
+      ✅ app.text_to_sql.OllamaUnavailableError
+      ✅ app.text_to_sql.TextToSQLError
+      ✅ app.text_to_sql.ask_database
+      ✅ app.text_to_sql.build_prompt
+      ✅ app.text_to_sql.generate_sql
+      ✅ app.models.AskRequest
+      ✅ app.models.AskResponse
+      ✅ app.models.HealthResponse
+      ✅ pathlib.Path
+      ✅ fastapi.staticfiles.StaticFiles
+    Símbolos:
+      🔧 función _warm_up_model
+          🟢 O(n) lineal: con 10 veces más datos, tarda unas 10 veces más.
+          0 parámetros
+          devuelve: sin tipo
+      🔧 función lifespan
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: app: FastAPI
+          devuelve: sin tipo
+      🔧 función health
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          0 parámetros
+          devuelve: sin tipo
+      🏛️ clase InternalQueryRequest
+          🟢 O(1) constante: no depende de cuántos datos haya.
+      🔧 función internal_query
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: request: InternalQueryRequest
+          devuelve: sin tipo
+      🔧 función ask
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: request: AskRequest
+          devuelve: sin tipo
+    Componentes:
+      🔌 SDK + API (13):
+           2  app/main.py
+           4  API entry point: instantiates FastAPI, loads the CSV into SQLite on
+          40      minutes on a slow connection). Without this, `app` could start
+          68  async def lifespan(app: FastAPI):
+          87  app = FastAPI(title="NL-to-SQL App", lifespan=lifespan)
+          90  @app.get("/health", response_model=HealthResponse)
+          99  @app.post("/internal/query")
+         107          raise HTTPException(status_code=400, detail=str(exc))
+         110  @app.post("/ask", response_model=AskResponse)
+         123          raise HTTPException(
+         132          raise HTTPException(
+         138          raise HTTPException(status_code=422, detail=str(exc))
+         157  app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+      🧠 Lógica (80):
+           1  """
+           5  startup, and exposes /health, /ask (natural language queries), and an
+           6  internal endpoint for testing raw SQL queries.
+           7  """
+          27  ASK_TIMEOUT_SECONDS = float(os.getenv("ASK_TIMEOUT_SECONDS", "120"))
+          28  STATIC_DIR = Path(__file__).parent / "static"
+          30  WARMUP_MAX_RETRIES = int(os.getenv("WARMUP_MAX_RETRIES", "10"))
+          31  WARMUP_BACKOFF_SECONDS = float(os.getenv("WARMUP_BACKOFF_SECONDS", "5"))
+          34  async def _warm_up_model():
+          35      """
+          36      Tries to warm up the model, retrying with a fixed delay between
+          37      attempts. This matters specifically under Docker: the `ollama`
+          38      service's healthcheck only confirms its server is responding — not
+          39      that the model has finished downloading (`ollama pull` can take
+          41      serving real questions before the model is ready, and a real
+          42      question's own retry loop (MAX_RETRIES in ask_database) is tuned for
+          43      correcting bad SQL, not for waiting out a multi-GB download — it
+          44      would exhaust its few quick attempts long before the pull finishes.
+          45      """
+          46      warmup_prompt = build_prompt("How many rows are in the table?")
+          47      for attempt in range(1, WARMUP_MAX_RETRIES + 1):
+          48          try:
+          49              await generate_sql(warmup_prompt)
+          51              return
+          52          except OllamaError as exc:
+          54                  "Startup: model warm-up attempt %d/%d failed: %s",
+          55                  attempt, WARMUP_MAX_RETRIES, exc,
+          56              )
+          57              if attempt < WARMUP_MAX_RETRIES:
+          58                  await asyncio.sleep(WARMUP_BACKOFF_SECONDS)
+          61          "Startup: model warm-up did not succeed after %d attempts; "
+          62          "will warm up on first request instead",
+          63          WARMUP_MAX_RETRIES,
+          64      )
+          67  @asynccontextmanager
+          72      try:
+          73          rows = load_csv_to_db()
+          75      except CSVLoadError as exc:
+          82      await _warm_up_model()
+          84      yield
+          91  def health():
+          92      return HealthResponse(status="ok", database_connected=health_check())
+          95  class InternalQueryRequest(BaseModel):
+          96      sql: str
+         100  def internal_query(request: InternalQueryRequest):
+         104      try:
+         105          return execute_query(request.sql)
+         106      except Exception as exc:
+         111  async def ask(request: AskRequest):
+         114      try:
+         115          result = await asyncio.wait_for(
+         116              ask_database(request.question),
+         117              timeout=ASK_TIMEOUT_SECONDS,
+         118          )
+         119      except asyncio.TimeoutError:
+         121              "Question timed out after %.0fs: %s", ASK_TIMEOUT_SECONDS, request.question
+         122          )
+         124              status_code=504,
+         125              detail=(
+         126                  f"The request took too long to process (over "
+         127                  f"{ASK_TIMEOUT_SECONDS:.0f}s). Try rephrasing your question."
+         128              ),
+         129          )
+         130      except OllamaUnavailableError as exc:
+         133              status_code=503,
+         134              detail="The language model is currently unavailable. Please try again shortly.",
+         135          )
+         136      except TextToSQLError as exc:
+         141          "Resolved question in %d attempt(s): %s -> %s",
+         142          result["attempts"],
+         143          request.question,
+         144          result["sql"],
+         145      )
+         147      return AskResponse(
+         148          question=request.question,
+         149          sql=result["sql"],
+         150          columns=result["columns"],
+         151          rows=result["rows"],
+         152          attempts=result["attempts"],
+         153      )
+      🖨️ Prints y logs (12):
+          24  logging.basicConfig(level=logging.INFO)
+          25  logger = logging.getLogger(__name__)
+          50              logger.info("Startup: Ollama model warmed up (attempt %d)", attempt)
+          53              logger.warning(
+          60      logger.warning(
+          74          logger.info("Startup: %d rows loaded into the database", rows)
+          76          logger.error("Startup: failed to load CSV: %s", exc)
+         112      logger.info("Received question: %s", request.question)
+         120          logger.error(
+         131          logger.error("Ollama unavailable for question '%s': %s", request.question, exc)
+         137          logger.error("Failed to produce SQL for question '%s': %s", request.question, exc)
+         140      logger.info(
+
+📄 app/static/app.js
+    Tipo:    📜 JavaScript
+    Imports:
+      (ninguno)
+    Símbolos:
+      🔧 función applyTheme
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: theme: sin tipo
+          devuelve: sin tipo
+      🔧 función loadSavedTheme
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          0 parámetros
+          devuelve: sin tipo
+      🔧 función saveTheme
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: theme: sin tipo
+          devuelve: sin tipo
+      🔧 función updateSubmitState
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          0 parámetros
+          devuelve: sin tipo
+      🔧 función setLoading
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: isLoading: sin tipo
+          devuelve: sin tipo
+      🔧 función showSql
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          2 parámetros: sql: sin tipo, attempts: sin tipo
+          devuelve: sin tipo
+      🔧 función showResults
+          🟢 O(n) lineal: con 10 veces más datos, tarda unas 10 veces más.
+          2 parámetros: columns: sin tipo, rows: sin tipo
+          devuelve: sin tipo
+      🔧 función showError
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          2 parámetros: title: sin tipo, detail: sin tipo
+          devuelve: sin tipo
+      🔧 función hideError
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          0 parámetros
+          devuelve: sin tipo
+      🔧 función describeAskError
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          2 parámetros: status: sin tipo, detail: sin tipo
+          devuelve: sin tipo
+      🔧 función handleSubmit
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: event: sin tipo
+          devuelve: sin tipo
+    Componentes:
+      🔌 SDK + API (1):
+         182      const response = await fetch("/ask", {
+      🧠 Lógica (181):
+           1  /**
+           2   * app/static/app.js
+           3   *
+           4   * Frontend logic for the single-page UI: theme toggle (persisted in
+           5   * localStorage), the call to POST /ask, and rendering the response (SQL,
+           6   * attempt count, results table, and readable errors).
+           7   */
+           9  const THEME_KEY = "theme";
+          10  const themeToggle = document.getElementById("theme-toggle");
+          11  const questionForm = document.getElementById("question-form");
+          12  const questionInput = document.getElementById("question-input");
+          13  const submitBtn = document.getElementById("submit-btn");
+          14  const statusBox = document.getElementById("status");
+          15  const statusText = document.getElementById("status-text");
+          16  const sqlSection = document.getElementById("sql-section");
+          17  const sqlOutput = document.getElementById("sql-output");
+          18  const attemptsEl = document.getElementById("attempts");
+          19  const resultsSection = document.getElementById("results-section");
+          20  const rowCountEl = document.getElementById("row-count");
+          21  const resultsTable = document.getElementById("results-table");
+          22  const resultsHead = resultsTable.querySelector("thead");
+          23  const resultsBody = resultsTable.querySelector("tbody");
+          24  const errorBox = document.getElementById("error-box");
+          25  const errorTitle = document.getElementById("error-title");
+          26  const errorDetail = document.getElementById("error-detail");
+          28  /** Applies a theme and updates the toggle label (it shows the mode you switch TO). */
+          29  function applyTheme(theme) {
+          30    const isLight = theme === "light";
+          31    document.body.classList.toggle("light-mode", isLight);
+          32    themeToggle.textContent = isLight ? "DARK" : "LIGHT";
+          33  }
+          35  /** Reads the saved theme. Storage can be blocked, so never assume it works. */
+          36  function loadSavedTheme() {
+          37    try {
+          38      return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
+          39    } catch {
+          40      return "dark";
+          41    }
+          42  }
+          44  function saveTheme(theme) {
+          45    try {
+          46      localStorage.setItem(THEME_KEY, theme);
+          47    } catch {
+          49    }
+          50  }
+          52  themeToggle.addEventListener("click", () => {
+          53    const next = document.body.classList.contains("light-mode") ? "dark" : "light";
+          54    applyTheme(next);
+          55    saveTheme(next);
+          56  });
+          58  applyTheme(loadSavedTheme());
+          60  /** Keeps the submit button disabled while the question field is empty. */
+          61  function updateSubmitState() {
+          62    submitBtn.disabled = !questionInput.value.trim();
+          63  }
+          65  questionInput.addEventListener("input", updateSubmitState);
+          66  updateSubmitState();
+          68  /**
+          69   * Shows/hides the loading indicator and disables the form while a request
+          70   * is in flight. Also hides the previous answer's SQL, results and error
+          71   * panels when a new request starts, so they don't stay on screen next to
+          72   * the "loading" state while the new question is still processing.
+          73   */
+          74  function setLoading(isLoading) {
+          75    submitBtn.disabled = isLoading || !questionInput.value.trim();
+          76    questionInput.disabled = isLoading;
+          77    statusBox.hidden = !isLoading;
+          78    if (isLoading) {
+          79      statusText.textContent = "Thinking... this can take up to a minute on the first request.";
+          80      sqlSection.hidden = true;
+          81      resultsSection.hidden = true;
+          82      hideError();
+          83    }
+          84  }
+          86  /** Shows the generated SQL and attempt count, and reveals the panel. */
+          87  function showSql(sql, attempts) {
+          88    sqlOutput.textContent = sql;
+          89    attemptsEl.textContent = attempts === 1 ? "1 attempt" : `${attempts} attempts`;
+          90    sqlSection.hidden = false;
+          91  }
+          93  /**
+          94   * Renders the query result as a table and reveals the panel.
+          95   * Rebuilds <thead> from `columns` on every call rather than assuming a
+          96   * fixed header, so it stays correct if the dataset's columns ever change.
+          97   * Cells use textContent only (never innerHTML): column values come from
+          98   * the CSV and could contain HTML that must not be executed. Clearing the
+          99   * containers below with innerHTML = "" is safe — that's a fixed string we
+         100   * write, not data from the CSV.
+         101   */
+         102  function showResults(columns, rows) {
+         103    resultsHead.innerHTML = "";
+         104    resultsBody.innerHTML = "";
+         106    const headRow = document.createElement("tr");
+         107    for (const column of columns) {
+         108      const th = document.createElement("th");
+         109      th.textContent = column;
+         110      headRow.appendChild(th);
+         111    }
+         112    resultsHead.appendChild(headRow);
+         114    if (rows.length === 0) {
+         115      const emptyRow = document.createElement("tr");
+         116      const emptyCell = document.createElement("td");
+         117      emptyCell.textContent = "No results for this query.";
+         118      emptyCell.colSpan = columns.length;
+         119      emptyRow.appendChild(emptyCell);
+         120      resultsBody.appendChild(emptyRow);
+         121    } else {
+         122      for (const row of rows) {
+         123        const tr = document.createElement("tr");
+         124        for (const value of row) {
+         125          const td = document.createElement("td");
+         126          td.textContent = value === null ? "—" : value;
+         127          tr.appendChild(td);
+         128        }
+         129        resultsBody.appendChild(tr);
+         130      }
+         131    }
+         133    rowCountEl.textContent = rows.length === 1 ? "1 row" : `${rows.length} rows`;
+         134    resultsSection.hidden = false;
+         135  }
+         137  /** Shows an error message and reveals the panel. */
+         138  function showError(title, detail) {
+         139    errorTitle.textContent = title;
+         140    errorDetail.textContent = detail;
+         141    errorBox.hidden = false;
+         142  }
+         144  function hideError() {
+         145    errorBox.hidden = true;
+         146  }
+         148  /**
+         149   * Turns a failed /ask response into a title + readable detail.
+         150   * `detail` from the backend has two possible shapes: a plain string for
+         151   * our own errors (504 timeout, 422 retries exhausted — both already
+         152   * written for end users in main.py), or a list of objects for FastAPI's
+         153   * own Pydantic validation 422 (e.g. malformed body). Only the string
+         154   * case is safe to show as-is.
+         155   */
+         156  function describeAskError(status, detail) {
+         157    if (status === 504) {
+         158      return { title: "Request timed out", detail };
+         159    }
+         160    if (status === 422 && typeof detail === "string") {
+         161      return { title: "Couldn't answer that question", detail };
+         162    }
+         163    return {
+         164      title: "Something went wrong",
+         165      detail: "Please rephrase your question and try again.",
+         166    };
+         167  }
+         169  /**
+         170   * Sends the question to POST /ask, renders the result, and shows a
+         171   * readable error if the request fails (bad response or network failure).
+         172   */
+         173  async function handleSubmit(event) {
+         174    event.preventDefault();
+         176    const question = questionInput.value.trim();
+         177    if (!question) return;
+         179    setLoading(true);
+         181    try {
+         183        method: "POST",
+         184        headers: { "Content-Type": "application/json" },
+         185        body: JSON.stringify({ question }),
+         186      });
+         188      const data = await response.json();
+         190      if (!response.ok) {
+         192        const { title, detail } = describeAskError(response.status, data.detail);
+         193        showError(title, detail);
+         194        return;
+         195      }
+         198      showSql(data.sql, data.attempts);
+         199      showResults(data.columns, data.rows);
+         200    } catch (err) {
+         203      showError(
+         204        "Couldn't connect",
+         205        "Check that the server is running and try again."
+         206      );
+         207    } finally {
+         208      setLoading(false);
+         209    }
+         210  }
+         212  questionForm.addEventListener("submit", handleSubmit);
+      🖨️ Prints y logs (3):
+         191        console.error("Ask failed:", response.status, data.detail);
+         197      console.log("Ask succeeded:", data);
+         202      console.error("Network error calling /ask:", err);
+
+📄 app/text_to_sql.py
+    Tipo:    🐍 Python
+    Imports:
+      ✅ logging
+      ✅ os
+      ✅ re
+      ✅ sqlite3
+      ✅ httpx
+      ✅ app.db.SCHEMA
+      ✅ app.db.TABLE_NAME
+      ✅ app.db.execute_query
+    Símbolos:
+      🔧 función _format_schema
+          🟢 O(n) lineal: con 10 veces más datos, tarda unas 10 veces más.
+          0 parámetros
+          devuelve: str
+      🔧 función build_prompt
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: question: str
+          devuelve: str
+      🏛️ clase OllamaError
+          🟢 O(1) constante: no depende de cuántos datos haya.
+      🔧 función _extract_sql
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          1 parámetro: raw_response: str
+          devuelve: str
+      🔧 función generate_sql
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          2 parámetros: prompt: str, timeout: float
+          devuelve: str
+      🏛️ clase SQLValidationError
+          🟢 O(1) constante: no depende de cuántos datos haya.
+      🔧 función validate_sql
+          🟢 O(n) lineal: con 10 veces más datos, tarda unas 10 veces más.
+          1 parámetro: sql: str
+          devuelve: str
+      🏛️ clase TextToSQLError
+          🟢 O(1) constante: no depende de cuántos datos haya.
+      🏛️ clase OllamaUnavailableError
+          🟢 O(1) constante: no depende de cuántos datos haya.
+      🔧 función _build_retry_prompt
+          🟢 O(1) constante: no depende de cuántos datos haya.
+          3 parámetros: original_prompt: str, failed_sql: str, error: str
+          devuelve: str
+      🔧 función ask_database
+          🟢 O(n) lineal: con 10 veces más datos, tarda unas 10 veces más.
+          1 parámetro: question: str
+          devuelve: dict
+    Componentes:
+      🔌 SDK + API (3):
+         131          async with httpx.AsyncClient(timeout=timeout) as client:
+         132              response = await client.post(
+         148      except httpx.HTTPError as exc:
+      🧠 Lógica (206):
+           1  """
+           2  app/text_to_sql.py
+           4  Builds the prompt sent to the language model: injects the real database
+           5  schema (pulled from db.SCHEMA, the single source of truth) plus a few
+           6  worked examples, so a small general-purpose model has enough context to
+           7  produce valid SQL for this specific table.
+           8  """
+          20  SYSTEM_INSTRUCTIONS = """You are a SQL generator. Your only task is to \
+          21  translate a natural language question into a single, read-only SQLite \
+          22  SELECT statement for the table described below.
+          24  Context: every row in this table is already a horror book listing. \
+          25  Generic words in the question like "book", "books", "product" or "item" \
+          26  describe the whole table, not a filter — never turn them into a WHERE \
+          27  clause. Only filter on `title` when the question names something that \
+          28  would literally appear in that text (an author, a specific word from a \
+          29  title). `title` values are written in Spanish; never match an English \
+          30  word against it. Never filter `item_id`: it's an internal code (e.g. \
+          31  'MLA43454125'), not descriptive text, and never contains words from the \
+          32  question.
+          34  Rules:
+          35  - Output only the SQL query. No explanation, no markdown formatting.
+          36  - Only SELECT statements are allowed. Never generate INSERT, UPDATE, \
+          37  DELETE, DROP, ALTER, ATTACH, PRAGMA, or CREATE.
+          38  - Only one statement per query. Never chain statements with semicolons.
+          39  - Only use the table and columns listed below. Never invent a column \
+          40  that isn't listed.
+          41  """
+          43  FEW_SHOT_EXAMPLES = """Examples:
+          45  Question: How many products are currently in stock?
+          46  SQL: SELECT COUNT(*) FROM products WHERE in_stock = 1;
+          48  Question: What are the 5 cheapest products?
+          49  SQL: SELECT title, price FROM products ORDER BY price ASC LIMIT 5;
+          51  Question: What are the 3 most expensive products?
+          52  SQL: SELECT title, price FROM products ORDER BY price DESC LIMIT 3;
+          54  Question: How many products have sold more than 20 units?
+          55  SQL: SELECT COUNT(*) FROM products WHERE units_sold > 20;
+          57  Question: Which seller has the most listings?
+          58  SQL: SELECT seller_name, COUNT(*) AS listing_count FROM products \
+          59  GROUP BY seller_name ORDER BY listing_count DESC LIMIT 1;
+          61  Question: Show the rating and review count for the first 10 books.
+          62  SQL: SELECT rating, reviews_count FROM products LIMIT 10;
+          63  """
+          66  def _format_schema() -> str:
+          67      """Renders db.SCHEMA as a plain-text table description for the prompt."""
+          68      lines = [f"Table: {TABLE_NAME}"]
+          69      for column_name, info in SCHEMA.items():
+          70          lines.append(f"- {column_name} ({info['sql_type']})")
+          71      return "\n".join(lines)
+          74  def build_prompt(question: str) -> str:
+          75      """
+          76      Assembles the full prompt: system instructions, the real schema,
+          77      worked examples, and the user's question, in that order.
+          78      """
+          79      return (
+          80          f"{SYSTEM_INSTRUCTIONS}\n"
+          81          f"{_format_schema()}\n\n"
+          82          f"{FEW_SHOT_EXAMPLES}\n"
+          83          f"Question: {question}\n"
+          84          f"SQL:"
+          85      )
+          88  """
+          89      Calls the local Ollama API with the prompt from build_prompt() and
+          90  extracts a clean SQL string from the model's raw response.
+          91  """
+          95  OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+          96  OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
+          97  OLLAMA_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "90"))
+          99  class OllamaError(Exception):
+         100      """Raised when the Ollama API can't be reached or returns an error."""
+         103  def _extract_sql(raw_response: str) -> str:
+         104      """
+         105      Pulls a clean SQL statement out of the model's raw text response.
+         106      Small models often wrap the query in a markdown code fence even when
+         107      told not to — this strips that, and trims anything after the first
+         108      semicolon so a stray sentence tacked on by the model doesn't get
+         109      treated as part of the query.
+         110      """
+         111      text = raw_response.strip()
+         112      fence_match = re.search(r"```(?:sql)?\s*(.*?)```", text, re.DOTALL | re.IGNORECASE)
+         113      if fence_match:
+         114          text = fence_match.group(1).strip()
+         116      semicolon_index = text.find(";")
+         117      if semicolon_index != -1:
+         118          text = text[: semicolon_index + 1]
+         120      return text.strip()
+         123  async def generate_sql(prompt: str, timeout: float = OLLAMA_TIMEOUT_SECONDS) -> str:
+         124      """
+         125      Sends the prompt to the local Ollama API and returns a cleaned-up
+         126      SQL string. Raises OllamaError if the service is unreachable or
+         127      responds with an error — callers decide how to handle that (e.g.
+         128      reporting it through /health-style error responses).
+         129      """
+         130      try:
+         133                  f"{OLLAMA_HOST}/api/generate",
+         134                  json={
+         135                      "model": OLLAMA_MODEL,
+         136                      "prompt": prompt,
+         137                      "stream": False,
+         144                      "options": {"temperature": 0},
+         145                  },
+         146              )
+         147              response.raise_for_status()
+         149          raise OllamaError(f"Failed to reach Ollama at '{OLLAMA_HOST}': {exc}")
+         151      raw_text = response.json().get("response", "")
+         152      if not raw_text:
+         153          raise OllamaError("Ollama returned an empty response")
+         155      return _extract_sql(raw_text)
+         157  """
+         159  SQL validator: acts as an independent security layer that never trusts
+         160  the model's output, regardless of what the prompt asked for. See section
+         161  5.1 of the build doc for the full threat model.
+         162  """
+         164  MAX_QUERY_RESULTS = int(os.getenv("MAX_QUERY_RESULTS", "100"))
+         166  FORBIDDEN_KEYWORDS = (
+         167      "INSERT", "UPDATE", "DELETE", "DROP", "ALTER",
+         168      "ATTACH", "PRAGMA", "CREATE", "REPLACE", "TRUNCATE",
+         169  )
+         172  class SQLValidationError(Exception):
+         173      """Raised when generated SQL fails the security/structure checks."""
+         176  def validate_sql(sql: str) -> str:
+         177      """
+         178      Validates generated SQL against a strict allowlist and returns a safe
+         179      version of it (with a result limit enforced). Raises
+         180      SQLValidationError on any violation — column/table existence is
+         181      intentionally NOT checked here: SQLite itself will reject an unknown
+         182      column at execution time, and that real error is what feeds the
+         183      retry loop, instead of duplicating schema knowledge in two places.
+         184      """
+         185      cleaned = sql.strip().rstrip(";").strip()
+         187      if not cleaned:
+         188          raise SQLValidationError("Empty SQL query")
+         190      if not re.match(r"(?is)^select\b", cleaned):
+         191          raise SQLValidationError("Only SELECT statements are allowed")
+         193      if ";" in cleaned:
+         194          raise SQLValidationError("Multiple statements are not allowed")
+         196      upper = cleaned.upper()
+         197      for keyword in FORBIDDEN_KEYWORDS:
+         198          if re.search(rf"\b{keyword}\b", upper):
+         199              raise SQLValidationError(f"Forbidden keyword detected: {keyword}")
+         201      if not re.search(rf"\bFROM\s+{re.escape(TABLE_NAME)}\b", cleaned, re.IGNORECASE):
+         202          raise SQLValidationError(f"Query must select from the '{TABLE_NAME}' table")
+         204      if not re.search(r"\bLIMIT\s+\d+", cleaned, re.IGNORECASE):
+         205          cleaned = f"{cleaned} LIMIT {MAX_QUERY_RESULTS}"
+         207      return cleaned
+         210  """
+         212  Retry loop: ties together prompt building, model calls, validation, and
+         213  execution. If the SQL fails validation or execution, the real error is
+         214  fed back to the model so it can correct itself, up to a fixed number of
+         215  attempts.
+         216  """
+         219  MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
+         222  class TextToSQLError(Exception):
+         223      """Raised when no valid SQL could be produced after all retries."""
+         226  class OllamaUnavailableError(TextToSQLError):
+         227      """
+         228      Raised instead of the generic TextToSQLError when every retry attempt
+         229      failed specifically because Ollama was unreachable (not because the
+         230      model produced invalid SQL). Lets callers (main.py) return 503
+         231      Service Unavailable instead of 422 for this specific case — the
+         232      problem isn't the question, it's that a dependency is down.
+         233      """
+         236  def _build_retry_prompt(original_prompt: str, failed_sql: str, error: str) -> str:
+         237      """Appends the failed attempt and its real error to the original prompt."""
+         238      return (
+         239          f"{original_prompt} {failed_sql}\n\n"
+         240          f"That query failed with this error: {error}\n"
+         241          f"Fix the query and respond with only the corrected SQL.\n"
+         242          f"SQL:"
+         243      )
+         246  async def ask_database(question: str) -> dict:
+         247      """
+         248      Runs the full text-to-SQL flow for one question: build prompt, call
+         249      the model, validate, execute — retrying with the real error as
+         250      feedback if any step fails. Returns the same shape as
+         251      db.execute_query() plus the attempt count: {"columns": [...],
+         252      "rows": [...], "sql": "...", "attempts": N}.
+         253      """
+         254      prompt = build_prompt(question)
+         255      last_error = None
+         256      all_failures_were_ollama = True
+         258      for attempt in range(1, MAX_RETRIES + 1):
+         259          raw_sql = None
+         260          try:
+         261              raw_sql = await generate_sql(prompt)
+         262              safe_sql = validate_sql(raw_sql)
+         263              result = execute_query(safe_sql)
+         264              result["sql"] = safe_sql
+         265              result["attempts"] = attempt
+         266              return result
+         267          except OllamaError as exc:
+         268              last_error = str(exc)
+         269              failed_sql = "(the model did not return a query)"
+         271          except SQLValidationError as exc:
+         272              last_error = str(exc)
+         273              failed_sql = raw_sql
+         274              all_failures_were_ollama = False
+         276          except sqlite3.OperationalError as exc:
+         278              last_error = str(exc)
+         279              failed_sql = raw_sql
+         280              all_failures_were_ollama = False
+         283          if attempt < MAX_RETRIES:
+         284              prompt = _build_retry_prompt(prompt, failed_sql, last_error)
+         286      error_message = f"Could not produce valid SQL after {MAX_RETRIES} attempts. Last error: {last_error}"
+         287      if all_failures_were_ollama:
+         288          raise OllamaUnavailableError(error_message)
+         289      raise TextToSQLError(error_message)
+      🖨️ Prints y logs (4):
+          16  logger = logging.getLogger(__name__)
+         270              logger.warning("Attempt %d failed (Ollama error): %s", attempt, last_error)
+         275              logger.warning("Attempt %d failed (invalid SQL: %r): %s", attempt, raw_sql, last_error)
+         281              logger.warning("Attempt %d failed (execution error: %r): %s", attempt, raw_sql, last_error)
+
+🌳 Estructura
+
+├── .dockerignore
+├── .env
+├── .env.example
+├── .git/
+│   ├── HEAD
+│   ├── branches/
+│   ├── config
+│   ├── description
+│   ├── hooks/
+│   │   ├── applypatch-msg.sample
+│   │   ├── commit-msg.sample
+│   │   ├── fsmonitor-watchman.sample
+│   │   ├── post-update.sample
+│   │   ├── pre-applypatch.sample
+│   │   ├── pre-commit.sample
+│   │   ├── pre-merge-commit.sample
+│   │   ├── pre-push.sample
+│   │   ├── pre-rebase.sample
+│   │   ├── pre-receive.sample
+│   │   ├── prepare-commit-msg.sample
+│   │   ├── push-to-checkout.sample
+│   │   ├── sendemail-validate.sample
+│   │   └── update.sample
+│   ├── index
+│   ├── info/
+│   │   └── exclude
+│   ├── logs/
+│   │   ├── HEAD
+│   │   └── refs/
+│   │       ├── heads/
+│   │       │   └── main
+│   │       └── remotes/
+│   │           └── origin/
+│   │               └── HEAD
+│   ├── objects/
+│   │   ├── info/
+│   │   └── pack/
+│   │       ├── pack-149c3cffd23c33a52284c501d42e32a324cbf6f6.idx
+│   │       ├── pack-149c3cffd23c33a52284c501d42e32a324cbf6f6.pack
+│   │       └── pack-149c3cffd23c33a52284c501d42e32a324cbf6f6.rev
+│   ├── packed-refs
+│   └── refs/
+│       ├── heads/
+│       │   └── main
+│       ├── remotes/
+│       │   └── origin/
+│       │       └── HEAD
+│       └── tags/
+├── .gitignore
+├── .pytest_cache/
+│   ├── .gitignore
+│   ├── CACHEDIR.TAG
+│   ├── README.md
+│   └── v/
+│       └── cache/
+│           ├── nodeids
+│           └── stepwise
+├── Dockerfile
+├── LICENSE
+├── README.md
+├── app/
+│   ├── __pycache__/
+│   │   ├── db.cpython-312.pyc
+│   │   └── text_to_sql.cpython-312.pyc
+│   ├── db.py
+│   ├── main.py
+│   ├── models.py
+│   ├── static/
+│   │   ├── app.js
+│   │   ├── index.html
+│   │   └── styles.css
+│   └── text_to_sql.py
+├── data/
+│   ├── .gitkeep
+│   ├── data.csv
+│   ├── data_10.csv
+│   ├── data_50.csv
+│   └── data_full.csv
+├── docker-compose.yml
+├── docs/
+│   ├── demo.gif
+│   ├── make_diagram.py
+│   └── request-flow.png
+├── postman/
+│   └── nl-to-sql-app.postman_collection.json
+├── requirements-dev.txt
+├── requirements.txt
+└── tests/
+    ├── __pycache__/
+    │   ├── test_csv_loading.cpython-312-pytest-8.3.3.pyc
+    │   └── test_sql_validation.cpython-312-pytest-8.3.3.pyc
+    ├── test_csv_loading.py
+    └── test_sql_validation.py
+
+✅ 65 archivos analizados
+
+📦 Otros archivos (no mostrados): 50
+    (sin extensión) (15): .git/index, .git/info/exclude, .git/HEAD, .git/config, .git/description, .git/logs/HEAD, .git/logs/refs/heads/main, .git/logs/refs/remotes/origin/HEAD, .git/packed-refs, .git/refs/remotes/origin/HEAD, .git/refs/heads/main, .pytest_cache/v/cache/nodeids, .pytest_cache/v/cache/stepwise, Dockerfile, LICENSE
+    .css (1): app/static/styles.css
+    .dockerignore (1): .dockerignore
+    .env (1): .env
+    .example (1): .env.example
+    .gif (1): docs/demo.gif
+    .gitignore (2): .pytest_cache/.gitignore, .gitignore
+    .gitkeep (1): data/.gitkeep
+    .html (1): app/static/index.html
+    .idx (1): .git/objects/pack/pack-149c3cffd23c33a52284c501d42e32a324cbf6f6.idx
+    .pack (1): .git/objects/pack/pack-149c3cffd23c33a52284c501d42e32a324cbf6f6.pack
+    .png (1): docs/request-flow.png
+    .pyc (4): tests/__pycache__/test_csv_loading.cpython-312-pytest-8.3.3.pyc, tests/__pycache__/test_sql_validation.cpython-312-pytest-8.3.3.pyc, app/__pycache__/db.cpython-312.pyc, app/__pycache__/text_to_sql.cpython-312.pyc
+    .rev (1): .git/objects/pack/pack-149c3cffd23c33a52284c501d42e32a324cbf6f6.rev
+    .sample (14): .git/hooks/applypatch-msg.sample, .git/hooks/pre-push.sample, .git/hooks/pre-rebase.sample, .git/hooks/pre-receive.sample, .git/hooks/prepare-commit-msg.sample, .git/hooks/push-to-checkout.sample, .git/hooks/sendemail-validate.sample, .git/hooks/update.sample, .git/hooks/post-update.sample, .git/hooks/commit-msg.sample, .git/hooks/fsmonitor-watchman.sample, .git/hooks/pre-commit.sample, .git/hooks/pre-applypatch.sample, .git/hooks/pre-merge-commit.sample
+    .tag (1): .pytest_cache/CACHEDIR.TAG
+    .txt (2): requirements-dev.txt, requirements.txt
+    .yml (1): docker-compose.yml
+
+🧰 Entorno de desarrollo: 8051 archivos en 1 carpetas
+    .venv/
+    tipos: .pyc (2971), .py (2941), (sin extensión) (1379), .pyi (322), .so (71), .f90 (62), .txt (40), .pxd (34), .csv (30), .pyx (29), .h (27), .typed (27), .f (25), .md (16), .pyf (8), .tab (8), .tpl (7), .c (6), .npy (5), .build (3), .gz (3), .0 (2), .12 (2), .a (2), .cfg (2), .f2py_f2cmap (2), .npz (2), .pem (2), .pxi (2), .zi (2), .apache (1), .apache2 (1), .bsd (1), .cpp (1), .csh (1), .f95 (1), .fish (1), .fits (1), .inc (1), .ini (1), .json (1), .mit (1), .pc (1), .pkl (1), .ps1 (1), .rst (1), .template (1), .test (1), .toml (1)
